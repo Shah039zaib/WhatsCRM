@@ -8,25 +8,8 @@ const LICENSE_FILE = path.join(__dirname, "./license.json");
  * Middleware to check license
  */
 const checkLicense = async (req, res, next) => {
-  try {
-    if (fs.existsSync(LICENSE_FILE)) {
-      // License exists → allow
-      return next();
-    }
-
-    // License missing → block
-    return res.json({
-      success: false,
-      msg: "License verification needed",
-      licenseRequired: true,
-    });
-  } catch (err) {
-    console.error("License check error:", err);
-    return res.json({
-      success: false,
-      msg: "Unable to verify the license",
-    });
-  }
+  // License verification disabled — direct deploy, no license needed
+  return next();
 };
 
 /**
