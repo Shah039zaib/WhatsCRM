@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual Payments — Admin</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f6f9; color: #222; padding: 16px; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  h2 { font-size: 18px; margin: 24px 0 12px; }
+  .sub { color: #666; font-size: 13px; margin-bottom: 16px; }
+  .card { background: #fff; border-radius: 10px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 10px 0 4px; }
+  input, select, textarea { width: 100%; padding: 9px 10px; border: 1px solid #d0d7de; border-radius: 6px; font-size: 14px; }
+  textarea { min-height: 60px; resize: vertical; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 560px) { .row { grid-template-columns: 1fr; } }
+  button { cursor: pointer; border: none; border-radius: 6px; padding: 9px 14px; font-size: 14px; font-weight: 600; }
+  .btn-primary { background: #1a73e8; color: #fff; margin-top: 12px; }
+  .btn-danger { background: #d93025; color: #fff; }
+  .btn-ok { background: #188038; color: #fff; }
+  .btn-sm { padding: 6px 10px; font-size: 12px; margin-right: 6px; }
+  .method { border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+  .method .head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+  .b-easypaisa { background: #e8f5e9; color: #2e7d32; }
+  .b-jazzcash { background: #f3e5f5; color: #7b1fa2; }
+  .b-bank { background: #e3f2fd; color: #1565c0; }
+  .b-pending { background: #fff8e1; color: #f9a825; }
+  .b-approved { background: #e8f5e9; color: #2e7d32; }
+  .b-rejected { background: #ffebee; color: #c62828; }
+  .b-off { background: #f5f5f5; color: #999; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid #eee; vertical-align: top; }
+  th { background: #fafafa; font-size: 12px; text-transform: uppercase; color: #666; }
+  .tbl-wrap { overflow-x: auto; }
+  img.shot { width: 64px; height: 64px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd; }
+  .muted { color: #888; font-size: 12px; }
+  .check { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 14px; }
+  .check input { width: auto; }
+  #tokenBar { background: #fff3cd; border: 1px solid #ffe69c; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<h1>Manual Payments — Admin</h1>
+<p class="sub">Manage EasyPaisa / JazzCash / Bank accounts &amp; verify user payment screenshots.</p>
+
+<div id="tokenBar">
+  Admin JWT token needed.
+  <input id="tokenInput" type="password" placeholder="Paste admin Bearer token" style="margin-top:8px">
+  <button class="btn-primary btn-sm" onclick="saveToken()">Save token</button>
+</div>
+
+<!-- ============ PAYMENT METHODS ============ -->
+<h2>Payment Methods</h2>
+<div class="card">
+  <div id="methodsList"><p class="muted">Loading…</p></div>
+</div>
+
+<div class="card">
+  <h3 id="formTitle" style="font-size:15px">Add payment method</h3>
+  <input type="hidden" id="f_id">
+  <div class="row">
+    <div>
+      <label>Type</label>
+      <select id="f_type">
+        <option value="easypaisa">EasyPaisa</option>
+        <option value="jazzcash">JazzCash</option>
+        <option value="bank">Bank transfer</option>
+      </select>
+    </div>
+    <div>
+      <label>Account title</label>
+      <input id="f_title" placeholder="e.g. Muhammad Ali">
+    </div>
+  </div>
+  <div class="row">
+    <div>
+      <label>Account number</label>
+      <input id="f_number" placeholder="e.g. 03451234567">
+    </div>
+    <div>
+      <label>Bank name (for bank transfer)</label>
+      <input id="f_bank" placeholder="e.g. Meezan Bank">
+    </div>
+  </div>
+  <div class="row">
+    <div>
+      <label>IBAN (for bank transfer)</label>
+      <input id="f_iban" placeholder="e.g. PK36MEZN0001234567890123">
+    </div>
+    <div>
+      <label class="check" style="margin-top:32px"><input type="checkbox" id="f_active" checked> Active (visible to users)</label>
+    </div>
+  </div>
+  <label>Instructions for payer</label>
+  <textarea id="f_instructions" placeholder="e.g. Send money to the number above and upload the screenshot here."></textarea>
+  <button class="btn-primary" onclick="saveMethod()">Save method</button>
+  <button class="btn-sm" style="margin-top:12px" onclick="resetForm()">Cancel / reset</button>
+</div>
+
+<!-- ============ SUBMISSIONS ============ -->
+<h2>Payment Submissions</h2>
+<div class="card tbl-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>User</th><th>Plan</th><th>Amount</th><th>Method</th>
+        <th>TID / Sender</th><th>Screenshot</th><th>Status</th><th>Date</th><th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="subsBody"><tr><td colspan="9" class="muted">Loading…</td></tr></tbody>
+  </table>
+</div>
+
+<script>
+const API = "/api/manualpay";
+let token = localStorage.getItem("admin_manualpay_token") || "";
+
+function authHeaders(extra) {
+  return Object.assign({ "Authorization": "Bearer " + token }, extra || {});
+}
+function saveToken() {
+  token = document.getElementById("tokenInput").value.trim();
+  if (!token) return alert("Paste the admin token first.");
+  localStorage.setItem("admin_manualpay_token", token);
+  document.getElementById("tokenBar").classList.add("hidden");
+  loadAll();
+}
+if (token) document.getElementById("tokenBar").classList.add("hidden");
+
+async function api(path, opts) {
+  const r = await fetch(API + path, Object.assign({ headers: authHeaders() }, opts || {}));
+  return r.json();
+}
+
+/* ---------- Methods ---------- */
+async function loadMethods() {
+  const j = await api("/admin/manual_payment_methods");
+  const box = document.getElementById("methodsList");
+  if (!j.success) { box.innerHTML = "<p class='muted'>" + (j.msg || "Failed to load") + "</p>"; return; }
+  if (!j.data.length) { box.innerHTML = "<p class='muted'>No payment methods yet. Add one below.</p>"; return; }
+  box.innerHTML = j.data.map(m =>
+    "<div class='method'><div class='head'>" +
+    "<div><span class='badge b-" + m.method_type + "'>" + m.method_type + "</span> " +
+    "<strong>" + esc(m.account_title) + "</strong> <span class='muted'>" + esc(m.account_number) + "</span> " +
+    (m.is_active ? "" : "<span class='badge b-off'>inactive</span>") + "</div>" +
+    "<div><button class='btn-sm' onclick='editMethod(" + m.id + ")'>Edit</button>" +
+    "<button class='btn-sm btn-danger' onclick='delMethod(" + m.id + ")'>Delete</button></div>" +
+    "</div>" +
+    (m.bank_name ? "<div class='muted'>Bank: " + esc(m.bank_name) + "</div>" : "") +
+    (m.iban ? "<div class='muted'>IBAN: " + esc(m.iban) + "</div>" : "") +
+    (m.instructions ? "<div style='font-size:13px;margin-top:4px'>" + esc(m.instructions) + "</div>" : "") +
+    "</div>"
+  ).join("");
+}
+let methodsCache = [];
+async function loadMethodsCache() {
+  const j = await api("/admin/manual_payment_methods");
+  methodsCache = j.success ? j.data : [];
+}
+function editMethod(id) {
+  const m = methodsCache.find(x => x.id === id);
+  if (!m) return;
+  document.getElementById("f_id").value = m.id;
+  document.getElementById("f_type").value = m.method_type;
+  document.getElementById("f_title").value = m.account_title || "";
+  document.getElementById("f_number").value = m.account_number || "";
+  document.getElementById("f_bank").value = m.bank_name || "";
+  document.getElementById("f_iban").value = m.iban || "";
+  document.getElementById("f_instructions").value = m.instructions || "";
+  document.getElementById("f_active").checked = !!m.is_active;
+  document.getElementById("formTitle").textContent = "Edit payment method #" + m.id;
+  window.scrollTo(0, document.getElementById("formTitle").offsetTop - 20);
+}
+async function saveMethod() {
+  const body = {
+    id: document.getElementById("f_id").value || undefined,
+    method_type: document.getElementById("f_type").value,
+    account_title: document.getElementById("f_title").value.trim(),
+    account_number: document.getElementById("f_number").value.trim(),
+    bank_name: document.getElementById("f_bank").value.trim(),
+    iban: document.getElementById("f_iban").value.trim(),
+    instructions: document.getElementById("f_instructions").value.trim(),
+    is_active: document.getElementById("f_active").checked
+  };
+  const j = await api("/admin/manual_payment_method", {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(body)
+  });
+  alert(j.msg || (j.success ? "Saved" : "Failed"));
+  if (j.success) { resetForm(); loadMethods(); loadMethodsCache(); }
+}
+async function delMethod(id) {
+  if (!confirm("Delete this payment method?")) return;
+  const j = await api("/admin/manual_payment_method/" + id, { method: "DELETE" });
+  alert(j.msg || (j.success ? "Deleted" : "Failed"));
+  if (j.success) { loadMethods(); loadMethodsCache(); }
+}
+function resetForm() {
+  ["f_id","f_title","f_number","f_bank","f_iban","f_instructions"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("f_type").value = "easypaisa";
+  document.getElementById("f_active").checked = true;
+  document.getElementById("formTitle").textContent = "Add payment method";
+}
+
+/* ---------- Submissions ---------- */
+async function loadSubs() {
+  const j = await api("/admin/manual_payment_submissions");
+  const tb = document.getElementById("subsBody");
+  if (!j.success) { tb.innerHTML = "<tr><td colspan='9' class='muted'>" + (j.msg || "Failed") + "</td></tr>"; return; }
+  if (!j.data.length) { tb.innerHTML = "<tr><td colspan='9' class='muted'>No submissions yet.</td></tr>"; return; }
+  tb.innerHTML = j.data.map(s =>
+    "<tr>" +
+    "<td>" + esc(s.user_email || s.uid) + "</td>" +
+    "<td>" + esc(s.plan_title || ("#" + s.plan_id)) + "</td>" +
+    "<td>" + esc(String(s.amount)) + "</td>" +
+    "<td><span class='badge b-" + esc(s.method_type) + "'>" + esc(s.method_type) + "</span></td>" +
+    "<td>" + esc(s.transaction_id || "—") + "<br><span class='muted'>" + esc(s.sender_account || "") + "</span></td>" +
+    "<td>" + (s.screenshot ? "<a href='/media/" + esc(s.screenshot) + "' target='_blank'><img class='shot' src='/media/" + esc(s.screenshot) + "'></a>" : "—") + "</td>" +
+    "<td><span class='badge b-" + esc(s.status) + "'>" + esc(s.status) + "</span>" +
+      (s.admin_note ? "<br><span class='muted'>" + esc(s.admin_note) + "</span>" : "") + "</td>" +
+    "<td class='muted'>" + esc((s.created_at || "").toString().slice(0, 16).replace("T", " ")) + "</td>" +
+    "<td>" + (s.status === "pending"
+        ? "<button class='btn-sm btn-ok' onclick='approveSub(" + s.id + ")'>Approve</button>" +
+          "<button class='btn-sm btn-danger' onclick='rejectSub(" + s.id + ")'>Reject</button>"
+        : "<span class='muted'>done</span>") + "</td>" +
+    "</tr>"
+  ).join("");
+}
+async function approveSub(id) {
+  if (!confirm("Approve this payment and activate the user's plan?")) return;
+  const j = await api("/admin/manual_payment_submission/" + id + "/approve", { method: "POST" });
+  alert(j.msg || (j.success ? "Approved" : "Failed"));
+  if (j.success) loadSubs();
+}
+async function rejectSub(id) {
+  const note = prompt("Rejection reason (shown to user):", "");
+  if (note === null) return;
+  const j = await api("/admin/manual_payment_submission/" + id + "/reject", {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ admin_note: note })
+  });
+  alert(j.msg || (j.success ? "Rejected" : "Failed"));
+  if (j.success) loadSubs();
+}
+
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+async function loadAll() { await loadMethods(); await loadMethodsCache(); await loadSubs(); }
+if (token) loadAll();
+</script>
+</body>
+</html>
