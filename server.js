@@ -41,6 +41,7 @@ app.use("/api/theme", require("./routes/theme"));
 app.use("/api/insta", require("./routes/insta"));
 app.use("/api/kaban", require("./routes/kaban"));
 app.use("/api/waform", require("./routes/waform"));
+app.use("/api/manualpay", require("./routes/manual_payments"));
 
 // ─── Media Streaming Middleware ───────────────────────────────────────────────
 const createMediaMiddleware = (folderPath) => {
