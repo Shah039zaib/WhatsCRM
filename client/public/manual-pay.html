@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pay Manually — WhatsCRM</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f6f9; color: #222; padding: 16px; max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  h2 { font-size: 18px; margin: 24px 0 12px; }
+  .sub { color: #666; font-size: 13px; margin-bottom: 16px; }
+  .card { background: #fff; border-radius: 10px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .pmethod { border: 2px solid #e0e0e0; border-radius: 10px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s; }
+  .pmethod.sel { border-color: #1a73e8; background: #f0f6ff; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; }
+  .b-easypaisa { background: #e8f5e9; color: #2e7d32; }
+  .b-jazzcash { background: #f3e5f5; color: #7b1fa2; }
+  .b-bank { background: #e3f2fd; color: #1565c0; }
+  .b-pending { background: #fff8e1; color: #f9a825; }
+  .b-approved { background: #e8f5e9; color: #2e7d32; }
+  .b-rejected { background: #ffebee; color: #c62828; }
+  .acct { font-size: 20px; font-weight: 700; letter-spacing: 1px; margin: 4px 0; }
+  .muted { color: #888; font-size: 12px; }
+  .instr { font-size: 13px; background: #fafafa; border-radius: 6px; padding: 8px 10px; margin-top: 8px; }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 10px 0 4px; }
+  input, select { width: 100%; padding: 10px; border: 1px solid #d0d7de; border-radius: 6px; font-size: 14px; }
+  input[type=file] { padding: 8px; }
+  button { cursor: pointer; border: none; border-radius: 6px; padding: 11px 16px; font-size: 15px; font-weight: 700; }
+  .btn-primary { background: #1a73e8; color: #fff; width: 100%; margin-top: 14px; }
+  .btn-primary:disabled { background: #9ec1f0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid #eee; vertical-align: top; }
+  th { font-size: 11px; text-transform: uppercase; color: #666; }
+  .tbl-wrap { overflow-x: auto; }
+  #tokenBar { background: #fff3cd; border: 1px solid #ffe69c; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; }
+  .hidden { display: none; }
+  .ok-msg { background: #e8f5e9; border: 1px solid #a5d6a7; color: #2e7d32; border-radius: 8px; padding: 12px; margin-bottom: 14px; font-size: 14px; }
+  .err-msg { background: #ffebee; border: 1px solid #ef9a9a; color: #c62828; border-radius: 8px; padding: 12px; margin-bottom: 14px; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<h1>Manual Payment</h1>
+<p class="sub">Pay via EasyPaisa, JazzCash or bank transfer, then upload your payment screenshot. Admin will verify and activate your plan.</p>
+
+<div id="tokenBar">
+  Login token needed.
+  <input id="tokenInput" type="password" placeholder="Paste your Bearer token" style="margin-top:8px">
+  <button class="btn-primary" style="width:auto;margin-top:8px" onclick="saveToken()">Save token</button>
+</div>
+
+<div id="msg"></div>
+
+<h2>Step 1 — Send payment to</h2>
+<div id="methods"><p class="muted">Loading payment methods…</p></div>
+
+<h2>Step 2 — Submit your payment</h2>
+<div class="card">
+  <label>Plan ID</label>
+  <input id="f_plan" type="number" min="1" placeholder="e.g. 1">
+  <p class="muted" style="margin-top:4px">Enter the ID of the plan you are paying for.</p>
+
+  <label>Payment method used</label>
+  <select id="f_method">
+    <option value="easypaisa">EasyPaisa</option>
+    <option value="jazzcash">JazzCash</option>
+    <option value="bank">Bank transfer</option>
+  </select>
+
+  <label>Transaction / TRX ID (optional)</label>
+  <input id="f_tid" placeholder="e.g. 34567891234">
+
+  <label>Your account number (the one you paid from, optional)</label>
+  <input id="f_sender" placeholder="e.g. 03459876543">
+
+  <label>Payment screenshot (jpg/png, max 5MB) *</label>
+  <input id="f_shot" type="file" accept=".jpg,.jpeg,.png">
+
+  <button class="btn-primary" id="submitBtn" onclick="submitPayment()">Submit payment</button>
+</div>
+
+<h2>My submissions</h2>
+<div class="card tbl-wrap">
+  <table>
+    <thead><tr><th>Plan</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th></tr></thead>
+    <tbody id="mySubs"><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
+  </table>
+</div>
+
+<script>
+const API = "/api/manualpay";
+let token = localStorage.getItem("user_manualpay_token") || "";
+let selectedMethod = "easypaisa";
+
+function saveToken() {
+  token = document.getElementById("tokenInput").value.trim();
+  if (!token) return alert("Paste your token first.");
+  localStorage.setItem("user_manualpay_token", token);
+  document.getElementById("tokenBar").classList.add("hidden");
+  loadAll();
+}
+if (token) document.getElementById("tokenBar").classList.add("hidden");
+
+function showMsg(html, ok) {
+  document.getElementById("msg").innerHTML =
+    "<div class='" + (ok ? "ok-msg" : "err-msg") + "'>" + html + "</div>";
+  window.scrollTo(0, 0);
+}
+
+async function loadMethods() {
+  const r = await fetch(API + "/manual_payment_methods", {
+    headers: { "Authorization": "Bearer " + token }
+  });
+  const j = await r.json();
+  const box = document.getElementById("methods");
+  if (!j.success) { box.innerHTML = "<p class='muted'>" + esc(j.msg || "Failed to load") + "</p>"; return; }
+  if (!j.data.length) { box.innerHTML = "<p class='muted'>No payment methods available right now.</p>"; return; }
+  box.innerHTML = j.data.map((m, i) =>
+    "<div class='pmethod" + (i === 0 ? " sel" : "") + "' data-type='" + esc(m.method_type) + "' onclick='pickMethod(this)'>" +
+    "<span class='badge b-" + esc(m.method_type) + "'>" + esc(m.method_type) + "</span>" +
+    "<div class='acct'>" + esc(m.account_number) + "</div>" +
+    "<div><strong>" + esc(m.account_title) + "</strong></div>" +
+    (m.bank_name ? "<div class='muted'>" + esc(m.bank_name) + "</div>" : "") +
+    (m.iban ? "<div class='muted'>IBAN: " + esc(m.iban) + "</div>" : "") +
+    (m.instructions ? "<div class='instr'>" + esc(m.instructions) + "</div>" : "") +
+    "</div>"
+  ).join("");
+  selectedMethod = j.data[0].method_type;
+  document.getElementById("f_method").value = selectedMethod;
+}
+function pickMethod(el) {
+  document.querySelectorAll(".pmethod").forEach(x => x.classList.remove("sel"));
+  el.classList.add("sel");
+  selectedMethod = el.getAttribute("data-type");
+  document.getElementById("f_method").value = selectedMethod;
+}
+
+async function submitPayment() {
+  const planId = document.getElementById("f_plan").value.trim();
+  const shot = document.getElementById("f_shot").files[0];
+  if (!planId) return showMsg("Please enter the plan ID.", false);
+  if (!shot) return showMsg("Please attach your payment screenshot.", false);
+
+  const btn = document.getElementById("submitBtn");
+  btn.disabled = true;
+  btn.textContent = "Submitting…";
+
+  const fd = new FormData();
+  fd.append("plan_id", planId);
+  fd.append("method_type", document.getElementById("f_method").value);
+  fd.append("transaction_id", document.getElementById("f_tid").value.trim());
+  fd.append("sender_account", document.getElementById("f_sender").value.trim());
+  fd.append("screenshot", shot);
+
+  try {
+    const r = await fetch(API + "/submit_manual_payment", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + token },
+      body: fd
+    });
+    const j = await r.json();
+    showMsg(esc(j.msg || (j.success ? "Submitted" : "Failed")), j.success);
+    if (j.success) {
+      document.getElementById("f_tid").value = "";
+      document.getElementById("f_sender").value = "";
+      document.getElementById("f_shot").value = "";
+      loadMySubs();
+    }
+  } catch (e) {
+    showMsg("Network error. Try again.", false);
+  }
+  btn.disabled = false;
+  btn.textContent = "Submit payment";
+}
+
+async function loadMySubs() {
+  const r = await fetch(API + "/my_payment_submissions", {
+    headers: { "Authorization": "Bearer " + token }
+  });
+  const j = await r.json();
+  const tb = document.getElementById("mySubs");
+  if (!j.success) { tb.innerHTML = "<tr><td colspan='5' class='muted'>" + esc(j.msg || "Failed") + "</td></tr>"; return; }
+  if (!j.data.length) { tb.innerHTML = "<tr><td colspan='5' class='muted'>No submissions yet.</td></tr>"; return; }
+  tb.innerHTML = j.data.map(s =>
+    "<tr><td>" + esc(s.plan_title || ("#" + s.plan_id)) + "</td>" +
+    "<td>" + esc(String(s.amount)) + "</td>" +
+    "<td>" + esc(s.method_type) + "</td>" +
+    "<td><span class='badge b-" + esc(s.status) + "'>" + esc(s.status) + "</span>" +
+      (s.admin_note ? "<br><span class='muted'>" + esc(s.admin_note) + "</span>" : "") + "</td>" +
+    "<td class='muted'>" + esc((s.created_at || "").toString().slice(0, 16).replace("T", " ")) + "</td></tr>"
+  ).join("");
+}
+
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function loadAll() { loadMethods(); loadMySubs(); }
+if (token) loadAll();
+</script>
+</body>
+</html>
