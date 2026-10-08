@@ -153,12 +153,8 @@
       <p>Manage EasyPaisa / JazzCash / Bank accounts &amp; verify user payment screenshots.</p>
     </div>
 
-    <div id="tokenBar">
-      <p><strong>Admin authentication required.</strong> Paste your admin Bearer token to manage payments.</p>
-      <div class="rowline">
-        <input id="tokenInput" type="password" placeholder="Paste admin Bearer token">
-        <button class="btn btn-primary" onclick="saveToken()">Save token</button>
-      </div>
+    <div id="loginNotice" class="hidden" style="background:#fff3cd;border:1px solid #ffc107;border-radius:12px;padding:20px;margin-bottom:20px;text-align:center;">
+      <strong>Login required.</strong> Pehle <a href="/" style="color:#3367d9;">WhatsCRM Admin me login</a> karen, phir ye page khud kaam karega.
     </div>
 
     <!-- ============ PAYMENT METHODS ============ -->
@@ -233,20 +229,18 @@
 
 <script>
 const API = "/api/manualpay";
-// Auto-read from main WhatsCRM app session first, fall back to manual token
-let token = localStorage.getItem("token") || localStorage.getItem("admin_manualpay_token") || "";
+// Use the admin's WhatsCRM login session automatically (super admin, lifetime login)
+let token = localStorage.getItem("token") || "";
 
 function authHeaders(extra) {
   return Object.assign({ "Authorization": "Bearer " + token }, extra || {});
 }
-function saveToken() {
-  token = document.getElementById("tokenInput").value.trim();
-  if (!token) return alert("Paste the admin token first.");
-  localStorage.setItem("admin_manualpay_token", token);
-  document.getElementById("tokenBar").classList.add("hidden");
-  loadAll();
-}
-if (token) document.getElementById("tokenBar").classList.add("hidden");
+function saveToken() { /* auto-login: token read from WhatsCRM session */ }
+if (token) {
+      document.getElementById("loginNotice").classList.add("hidden");
+    } else {
+      document.getElementById("loginNotice").classList.remove("hidden");
+    }
 
 async function api(path, opts) {
   const r = await fetch(API + path, Object.assign({ headers: authHeaders() }, opts || {}));

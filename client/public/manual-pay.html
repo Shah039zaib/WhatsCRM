@@ -123,13 +123,9 @@
     <p>Pay via EasyPaisa, JazzCash or bank transfer, then upload your payment screenshot. Admin will verify and activate your plan.</p>
   </div>
 
-  <div id="tokenBar">
-    <p><strong>Login required.</strong> Paste your Bearer token to continue.</p>
-    <div class="rowline">
-      <input id="tokenInput" type="password" placeholder="Paste your Bearer token">
-      <button class="btn btn-primary btn-auto" onclick="saveToken()">Save token</button>
+  <div id="loginNotice" class="hidden" style="background:#fff3cd;border:1px solid #ffc107;border-radius:12px;padding:20px;margin-bottom:20px;text-align:center;">
+      <strong>Login required.</strong> Pehle <a href="/" style="color:#3367d9;">WhatsCRM me login</a> karen ya account banayen, phir payment submit kar saken ge.
     </div>
-  </div>
 
   <div id="msg"></div>
 
@@ -173,18 +169,16 @@
 
 <script>
 const API = "/api/manualpay";
-// Auto-read from main WhatsCRM app session first, fall back to manual token
-let token = localStorage.getItem("token") || localStorage.getItem("user_manualpay_token") || "";
+// Use the user's WhatsCRM login session automatically
+let token = localStorage.getItem("token") || "";
 let selectedMethod = "easypaisa";
 
-function saveToken() {
-  token = document.getElementById("tokenInput").value.trim();
-  if (!token) return alert("Paste your token first.");
-  localStorage.setItem("user_manualpay_token", token);
-  document.getElementById("tokenBar").classList.add("hidden");
-  loadAll();
-}
-if (token) document.getElementById("tokenBar").classList.add("hidden");
+function saveToken() { /* auto-login: token read from WhatsCRM session */ }
+if (token) {
+      document.getElementById("loginNotice").classList.add("hidden");
+    } else {
+      document.getElementById("loginNotice").classList.remove("hidden");
+    }
 
 function showMsg(html, ok) {
   document.getElementById("msg").innerHTML =
