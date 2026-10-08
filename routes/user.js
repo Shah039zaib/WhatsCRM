@@ -241,8 +241,8 @@ router.post("/signup", async (req, res) => {
     const uid = randomstring.generate();
 
     await query(
-      `INSERT INTO user (name, uid, email, password, mobile_with_country_code) VALUES (?,?,?,?,?)`,
-      [name, uid, email, haspass, mobile_with_country_code],
+      `INSERT INTO user (name, uid, email, password, mobile_with_country_code, role) VALUES (?,?,?,?,?,?)`,
+      [name, uid, email, haspass, mobile_with_country_code, 'user'],
     );
 
     // assigning plan
