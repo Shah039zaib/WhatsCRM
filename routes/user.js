@@ -29,7 +29,12 @@ const {
 } = require("../functions/function.js");
 const { sign } = require("jsonwebtoken");
 const validateUser = require("../middlewares/user.js");
-const Stripe = require("stripe");
+// Lazy-load stripe (heavy) only inside payment handlers to keep startup fast.
+let _Stripe = null;
+function StripeClient(key) {
+  if (!_Stripe) _Stripe = require("stripe");
+  return new _Stripe(key);
+}
 const {
   checkPlan,
   checkNote,
@@ -1204,7 +1209,7 @@ router.post("/create_stripe_session", validateUser, async (req, res) => {
 
     const stripeKeys = getWeb[0]?.pay_stripe_key;
 
-    const stripeClient = new Stripe(stripeKeys);
+    const stripeClient = StripeClient(stripeKeys);
 
     const { planId } = req.body;
 
@@ -1407,7 +1412,7 @@ function checlStripePayment(orderId) {
     try {
       const getStripe = await query(`SELECT * FROM web_private`, []);
 
-      const stripeClient = new Stripe(getStripe[0]?.pay_stripe_key);
+      const stripeClient = StripeClient(getStripe[0]?.pay_stripe_key);
       const getPay = await stripeClient.checkout.sessions.retrieve(orderId);
 
       // console.log({ status: getPay?.payment_status });
