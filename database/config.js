@@ -8,6 +8,7 @@ const con = mysql.createPool({
   password: process.env.DBPASS,
   database: process.env.DBNAME,
   charset: "utf8mb4",
+  connectTimeout: 60000,
   ssl: {
     minVersion: "TLSv1.2",
     rejectUnauthorized: true,
