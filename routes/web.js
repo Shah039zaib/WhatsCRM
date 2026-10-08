@@ -35,17 +35,7 @@ const {
 const {
   genInstaWebhook,
   getInstaCallbackUri,
-} = require("../helper/addon/insta/insta.js"); // TEMPORARY DEBUG ENDPOINT - REMOVE AFTER FIXING
-router.get("/debug_db", async (req, res) => {
-  try {
-    await query(`ALTER TABLE admin ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'admin'`, []);
-    await query(`UPDATE admin SET role = 'admin' WHERE email = ?`, ["admin@whatscrm.com"]);
-    const check = await query(`SELECT email, role FROM admin WHERE email = ?`, ["admin@whatscrm.com"]);
-    res.json({ fixed: true, email: check[0]?.email, role: check[0]?.role });
-  } catch (err) {
-    res.json({ error: err.message });
-  }
-});
+} = require("../helper/addon/insta/insta.js");
 
 router.get("/get_all", async (req, res) => {
   try {
