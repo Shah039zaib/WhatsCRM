@@ -941,29 +941,43 @@ router.get("/get_dashboard_for_user", adminValidator, async (req, res) => {
 
     // Get recent users (last 5)
     const recentUsers = getUsers
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .sort((a, b) => new Date(b.createdat || b.createdAt || 0) - new Date(a.createdat || a.createdAt || 0))
       .slice(0, 5)
-      .map((user) => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        plan: JSON.parse(user.plan || "{}").title || "No Plan",
-        date: new Date(user.createdAt).toISOString().split("T")[0],
-      }));
+      .map((user) => {
+        const rawDate = user.createdat || user.createdAt;
+        let dateStr = "N/A";
+        try {
+          const d = new Date(rawDate);
+          if (!isNaN(d.getTime())) dateStr = d.toISOString().split("T")[0];
+        } catch (e) {}
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          plan: JSON.parse(user.plan || "{}").title || "No Plan",
+          date: dateStr,
+        };
+      });
 
     // Get recent transactions (last 5)
     const recentTransactions = getOrders
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .sort((a, b) => new Date(b.createdat || b.createdAt || 0) - new Date(a.createdat || a.createdAt || 0))
       .slice(0, 5)
       .map((order) => {
         const user = getUsers.find((u) => u.uid === order.uid);
+        const rawDate = order.createdat || order.createdAt;
+        let dateStr = "N/A";
+        try {
+          const d = new Date(rawDate);
+          if (!isNaN(d.getTime())) dateStr = d.toISOString().split("T")[0];
+        } catch (e) {}
         return {
           id: order.id,
           user: user ? user.name : "Unknown",
           amount: `$${order.amount}`,
           plan: "Subscription",
           status: "Completed",
-          date: new Date(order.createdAt).toISOString().split("T")[0],
+          date: dateStr,
         };
       });
 
@@ -1010,7 +1024,8 @@ function getUserSignupsByMonth(users) {
   const unpaidSignupsByMonth = Array(12).fill(0);
 
   users.forEach((user) => {
-    const createdAt = new Date(user.createdAt);
+    const createdAt = new Date(user.createdat || user.createdAt);
+    if (isNaN(createdAt.getTime())) return; // skip records with no valid date
     const month = createdAt.getMonth();
 
     // Check if user has a paid plan
@@ -1032,7 +1047,8 @@ function getUserOrderssByMonth(orders) {
   const ordersByMonth = Array(12).fill(0);
 
   orders.forEach((order) => {
-    const createdAt = new Date(order.createdAt);
+    const createdAt = new Date(order.createdat || order.createdAt);
+    if (isNaN(createdAt.getTime())) return; // skip records with no valid date
     const month = createdAt.getMonth();
     const amount = parseFloat(order.amount) || 0;
 
@@ -1047,7 +1063,8 @@ function getChatsByMonth(chats) {
   const chatsByMonth = Array(12).fill(0);
 
   chats.forEach((chat) => {
-    const createdAt = new Date(chat.createdAt);
+    const createdAt = new Date(chat.createdat || chat.createdAt);
+    if (isNaN(createdAt.getTime())) return; // skip records with no valid date
     const month = createdAt.getMonth();
 
     chatsByMonth[month]++;
@@ -1061,7 +1078,8 @@ function getMessagesByMonth(conversations) {
   const messagesByMonth = Array(12).fill(0);
 
   conversations.forEach((conversation) => {
-    const createdAt = new Date(conversation.createdAt);
+    const createdAt = new Date(conversation.createdat || conversation.createdAt);
+    if (isNaN(createdAt.getTime())) return; // skip records with no valid date
     const month = createdAt.getMonth();
 
     messagesByMonth[month]++;
