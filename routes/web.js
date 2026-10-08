@@ -38,11 +38,10 @@ const {
 } = require("../helper/addon/insta/insta.js"); // TEMPORARY DEBUG ENDPOINT - REMOVE AFTER FIXING
 router.get("/debug_db", async (req, res) => {
   try {
-    const newHash = await bcrypt.hash("Admin123!", 10);
-    await query(`UPDATE admin SET password = ? WHERE email = ?`, [newHash, "admin@whatscrm.com"]);
-    const check = await query(`SELECT email, LENGTH(password) as len FROM admin WHERE email = ?`, ["admin@whatscrm.com"]);
-    const verify = await bcrypt.compare("Admin123!", newHash);
-    res.json({ updated: true, email: check[0]?.email, hash_len: check[0]?.len, self_verify: verify });
+    await query(`ALTER TABLE admin ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'admin'`, []);
+    await query(`UPDATE admin SET role = 'admin' WHERE email = ?`, ["admin@whatscrm.com"]);
+    const check = await query(`SELECT email, role FROM admin WHERE email = ?`, ["admin@whatscrm.com"]);
+    res.json({ fixed: true, email: check[0]?.email, role: check[0]?.role });
   } catch (err) {
     res.json({ error: err.message });
   }
