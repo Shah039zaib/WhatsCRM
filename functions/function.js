@@ -12,12 +12,12 @@ const nodemailer = require("nodemailer");
 const unzipper = require("unzipper");
 const { destributeTaskFlow } = require("./chatbot");
 const { URLSearchParams } = require("url");
-const mysql = require("mysql2/promise");
-const { MongoClient } = require("mongodb");
-const admin = require("firebase-admin");
-const sharp = require("sharp");
+// Heavy optional modules are lazy-loaded inside the functions that use them
+// (mysql2/promise, mongodb, firebase-admin) to keep server startup fast on
+// low-CPU free hosting. `sharp` was an unused require and has been removed.
 
 async function executeMySQLQuery(config) {
+  const mysql = require("mysql2/promise"); // lazy: only when external MySQL is used
   let connection;
   try {
     // Create connection using provided config
@@ -3308,6 +3308,7 @@ async function translateWithDeepseek(text, targetLanguage, apiKey) {
 }
 
 async function testMongoConnection(mongoUri) {
+  const { MongoClient } = require("mongodb"); // lazy: only when MongoDB is used
   let client;
 
   try {
@@ -3369,6 +3370,7 @@ async function testMongoConnection(mongoUri) {
 let firebaseApp = null;
 
 async function getFirebaseApp() {
+  const admin = require("firebase-admin"); // lazy: only when FCM push is used
   if (firebaseApp) return firebaseApp;
 
   const [mb] = await query(`SELECT * FROM mobile_app`, []);
@@ -3390,6 +3392,7 @@ async function sendFCMNotification({
 }) {
   try {
     await getFirebaseApp();
+    const admin = require("firebase-admin"); // lazy: only when FCM push is used
 
     const message = {
       token,
