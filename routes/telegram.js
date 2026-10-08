@@ -1,17 +1,12 @@
 const router = require("express").Router();
 const { query } = require("../database/dbpromise.js");
-const {
-  createSession,
-  verifyCode,
-  getUserSessions,
-  getSessionStatus,
-  connectSession,
-  disconnectSession,
-  deleteSession,
-  getChats,
-  checkTele,
-  sendMessage,
-} = require("../helper/addon/telegram/tele.js");
+// Lazy-load telegram client (heavy `telegram` package) only when a telegram
+// endpoint is actually hit, to keep server startup fast on free hosting.
+let _tele = null;
+function tele() {
+  if (!_tele) _tele = require("../helper/addon/telegram/tele.js");
+  return _tele;
+}
 const { checkPlan, checkTeleInbox } = require("../middlewares/plan.js");
 const validateUser = require("../middlewares/user.js");
 
@@ -49,7 +44,7 @@ router.post(
         return res.json({ msg: "Telegram creds are required from admin." });
       }
 
-      const result = await createSession(
+      const result = await tele().createSession(
         req.decode.uid,
         title,
         `+${formatNumber(mobile)}`,
@@ -82,7 +77,7 @@ router.post("/verify_otp", validateUser, async (req, res) => {
       });
     }
 
-    const result = await verifyCode(sessionId, code);
+    const result = await tele().verifyCode(sessionId, code);
     res.json(result);
   } catch (err) {
     res.json({
@@ -97,7 +92,7 @@ router.post("/verify_otp", validateUser, async (req, res) => {
 // Get all sessions for logged-in user
 router.get("/sessions", validateUser, async (req, res) => {
   try {
-    const sessions = await getUserSessions(req.decode.uid);
+    const sessions = await tele().getUserSessions(req.decode.uid);
     res.json({ success: true, sessions });
   } catch (err) {
     res.json({
@@ -113,7 +108,7 @@ router.get("/sessions", validateUser, async (req, res) => {
 router.get("/session_status/:sessionId", validateUser, async (req, res) => {
   try {
     const { sessionId } = req.params;
-    const result = await getSessionStatus(sessionId);
+    const result = await tele().getSessionStatus(sessionId);
     res.json(result);
   } catch (err) {
     res.json({
@@ -137,7 +132,7 @@ router.post("/reconnect", validateUser, async (req, res) => {
       });
     }
 
-    const result = await connectSession(sessionId);
+    const result = await tele().connectSession(sessionId);
     res.json(result);
   } catch (err) {
     res.json({
@@ -161,7 +156,7 @@ router.post("/disconnect", validateUser, async (req, res) => {
       });
     }
 
-    const result = await disconnectSession(sessionId);
+    const result = await tele().disconnectSession(sessionId);
     res.json(result);
   } catch (err) {
     res.json({
@@ -177,7 +172,7 @@ router.post("/disconnect", validateUser, async (req, res) => {
 router.get("/session/:sessionId", validateUser, async (req, res) => {
   try {
     const { sessionId } = req.params;
-    const result = await deleteSession(sessionId);
+    const result = await tele().deleteSession(sessionId);
     res.json(result);
   } catch (err) {
     res.json({
@@ -193,7 +188,7 @@ router.get("/session/:sessionId", validateUser, async (req, res) => {
 router.get("/delete_session/:sessionId", validateUser, async (req, res) => {
   try {
     const { sessionId } = req.params;
-    const result = await deleteSession(sessionId);
+    const result = await tele().deleteSession(sessionId);
     res.json(result);
   } catch (err) {
     res.json({
@@ -221,7 +216,7 @@ router.post("/send_message", validateUser, async (req, res) => {
       });
     }
 
-    const result = await sendMessage(sessionId, chatId, message);
+    const result = await tele().sendMessage(sessionId, chatId, message);
     res.json(result);
   } catch (err) {
     res.json({
@@ -243,7 +238,7 @@ router.get("/chats/:sessionId", validateUser, async (req, res) => {
     const { sessionId } = req.params;
     const { limit } = req.query;
 
-    const chats = await getChats(sessionId, parseInt(limit) || 50);
+    const chats = await tele().getChats(sessionId, parseInt(limit) || 50);
 
     res.json({
       success: true,
@@ -271,7 +266,7 @@ router.post("/get_chats", validateUser, async (req, res) => {
       });
     }
 
-    const chats = await getChats(sessionId, parseInt(limit) || 50);
+    const chats = await tele().getChats(sessionId, parseInt(limit) || 50);
 
     res.json({
       success: true,
@@ -295,7 +290,7 @@ router.post("/get_chats", validateUser, async (req, res) => {
 router.get("/check_status/:sessionId", validateUser, async (req, res) => {
   try {
     const { sessionId } = req.params;
-    const connected = checkTele(sessionId);
+    const connected = tele().checkTele(sessionId);
 
     res.json({
       success: true,
@@ -326,7 +321,7 @@ router.post("/check_multiple_status", validateUser, async (req, res) => {
 
     const statuses = sessionIds.map((sessionId) => ({
       sessionId,
-      connected: checkTele(sessionId),
+      connected: tele().checkTele(sessionId),
     }));
 
     res.json({
