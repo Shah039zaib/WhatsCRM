@@ -38,17 +38,11 @@ const {
 } = require("../helper/addon/insta/insta.js"); // TEMPORARY DEBUG ENDPOINT - REMOVE AFTER FIXING
 router.get("/debug_db", async (req, res) => {
   try {
-    const testEmail = "admin@whatscrm.com";
-    const q1 = await query(`SELECT COUNT(*) as c FROM admin`, []);
-    const q2 = await query(`SELECT * FROM admin WHERE email = ?`, [testEmail]);
-    const q3 = await query(`SELECT * FROM admin WHERE email = 'admin@whatscrm.com'`, []);
-    res.json({
-      count_no_params: q1[0]?.c,
-      with_param_rows: q2.length,
-      with_param_email: q2[0]?.email || null,
-      literal_rows: q3.length,
-      literal_email: q3[0]?.email || null,
-    });
+    const newHash = await bcrypt.hash("Admin123!", 10);
+    await query(`UPDATE admin SET password = ? WHERE email = ?`, [newHash, "admin@whatscrm.com"]);
+    const check = await query(`SELECT email, LENGTH(password) as len FROM admin WHERE email = ?`, ["admin@whatscrm.com"]);
+    const verify = await bcrypt.compare("Admin123!", newHash);
+    res.json({ updated: true, email: check[0]?.email, hash_len: check[0]?.len, self_verify: verify });
   } catch (err) {
     res.json({ error: err.message });
   }
