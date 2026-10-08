@@ -35,7 +35,7 @@ const {
 const {
   genInstaWebhook,
   getInstaCallbackUri,
-} = require("../helper/addon/insta/insta.js");
+} = require("../helper/addon/insta/insta.js"); router.get("/debug_db", async (req, res) => { try { const dbInfo = await query(`SELECT DATABASE() as db`, []); const adminCount = await query(`SELECT COUNT(*) as c FROM admin`, []); const adminEmails = await query(`SELECT email FROM admin LIMIT 5`, []); res.json({ database: dbInfo[0]?.db, dbhost_env: process.env.DBHOST ? "set" : "NOT SET", dbname_env: process.env.DBNAME || "NOT SET", admin_count: adminCount[0]?.c, admin_emails: adminEmails.map(r => r.email), }); } catch (err) { res.json({ error: err.message }); } }); // TEMPORARY DEBUG ENDPOINT - REMOVE AFTER FIXING
 
 router.get("/get_all", async (req, res) => {
   try {
