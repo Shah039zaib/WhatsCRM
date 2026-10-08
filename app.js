@@ -18,20 +18,24 @@ const currentDir = process.cwd();
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cors());
-app.use(fileUpload());
+// express-fileupload parses multipart bodies — only enable it on the routers
+// that actually accept file uploads, so plain JSON API calls skip the overhead.
+const upload = fileUpload();
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
-app.use("/api/user", require("./routes/user"));
-app.use("/api/web", require("./routes/web"));
-app.use("/api/admin", require("./routes/admin"));
-app.use("/api/phonebook", require("./routes/phonebook"));
+// Routers that handle file uploads get the multipart parser; the rest skip it.
+app.use("/api/user", upload, require("./routes/user"));
+app.use("/api/web", upload, require("./routes/web"));
+app.use("/api/admin", upload, require("./routes/admin"));
+app.use("/api/phonebook", upload, require("./routes/phonebook"));
+app.use("/api/agent", upload, require("./routes/agent"));
+app.use("/api/manualpay", upload, require("./routes/manual_payments"));
 app.use("/api/chat_flow", require("./routes/chatFlow"));
 app.use("/api/inbox", require("./routes/inbox"));
 app.use("/api/templet", require("./routes/templet"));
 app.use("/api/chatbot", require("./routes/chatbot"));
 app.use("/api/broadcast", require("./routes/broadcast"));
 app.use("/api/v1", require("./routes/apiv2"));
-app.use("/api/agent", require("./routes/agent"));
 app.use("/api/qr", require("./routes/qr"));
 app.use("/api/ai", require("./routes/ai"));
 app.use("/api/webhook", require("./routes/webhook"));
@@ -41,7 +45,6 @@ app.use("/api/theme", require("./routes/theme"));
 app.use("/api/insta", require("./routes/insta"));
 app.use("/api/kaban", require("./routes/kaban"));
 app.use("/api/waform", require("./routes/waform"));
-app.use("/api/manualpay", require("./routes/manual_payments"));
 
 // ─── Media Streaming Middleware ───────────────────────────────────────────────
 const createMediaMiddleware = (folderPath) => {
@@ -83,7 +86,21 @@ app.use("/media", createMediaMiddleware("./client/public/media"));
 app.use("/meta-media", createMediaMiddleware("./client/public/meta-media"));
 
 // ─── Static & Catch-All ───────────────────────────────────────────────────────
-app.use(express.static(path.resolve(currentDir, "./client/public")));
+// Hashed build assets (main.<hash>.js/css) are immutable — cache them for a
+// year so repeat visits don't re-download the 5MB bundle. index.html itself
+// is never cached so deploys are picked up immediately.
+app.use(
+  express.static(path.resolve(currentDir, "./client/public"), {
+    index: false,
+    maxAge: "1y",
+    immutable: true,
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith("index.html") || filePath.endsWith(".json")) {
+        res.setHeader("Cache-Control", "no-cache");
+      }
+    },
+  })
+);
 
 app.get("*", function (request, response) {
   response.sendFile(path.resolve(currentDir, "./client/public", "index.html"));
@@ -92,7 +109,15 @@ app.get("*", function (request, response) {
 // ─── Server ───────────────────────────────────────────────────────────────────
 const server = app.listen(process.env.PORT || 3010, () => {
   console.log(`WaCrm server is running on port ${process.env.PORT}`);
-  updateLangJsonFromEnglish();
+  // Defer language sync until after the server is accepting connections so
+  // startup isn't blocked by file I/O on slow disks.
+  setImmediate(() => {
+    try {
+      updateLangJsonFromEnglish();
+    } catch (e) {
+      console.error("[LangSync] deferred sync failed:", e?.message);
+    }
+  });
   // init();
   // setTimeout(() => {
   //   warmerLoopInit();
