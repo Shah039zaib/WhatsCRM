@@ -173,7 +173,8 @@
 
 <script>
 const API = "/api/manualpay";
-let token = localStorage.getItem("user_manualpay_token") || "";
+// Auto-read from main WhatsCRM app session first, fall back to manual token
+let token = localStorage.getItem("token") || localStorage.getItem("user_manualpay_token") || "";
 let selectedMethod = "easypaisa";
 
 function saveToken() {
