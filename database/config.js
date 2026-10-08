@@ -1,7 +1,9 @@
 const mysql = require("mysql2");
 
 const con = mysql.createPool({
-  connectionLimit: 200,
+  connectionLimit: 10,
+  maxIdle: 5,
+  idleTimeout: 30000,
   host: process.env.DBHOST || "localhost",
   port: process.env.DBPORT || 3306,
   user: process.env.DBUSER,
