@@ -1,7 +1,7 @@
 const router = require("express").Router();
 const { query } = require("../database/dbpromise.js");
 const validateUser = require("../middlewares/user.js");
-const Stripe = require("stripe");
+// Note: `stripe` was an unused require here and has been removed.
 const {
   checkPlan,
   checkNote,
