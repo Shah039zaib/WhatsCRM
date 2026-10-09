@@ -130,7 +130,7 @@ async function cleanupTele() {
 }
 
 function checkTelePlugin() {
-  return false;
+  return true;
 }
 
 module.exports = {
