@@ -854,6 +854,12 @@ CREATE TABLE IF NOT EXISTS `web_public` (
   `rtl` VARCHAR(255) NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Default site settings row (required: frontend startup calls /api/web/get_web_public
+-- and hangs on a blank page if this table is empty)
+INSERT INTO `web_public` (`app_name`, `currency_code`, `currency_symbol`, `is_custom_home`, `rtl`)
+SELECT 'WhatsCRM', 'PKR', 'Rs', 0, '0'
+WHERE NOT EXISTS (SELECT 1 FROM `web_public`);
+
 -- Table: manual_payment_methods (admin-managed EasyPaisa/JazzCash/Bank accounts)
 CREATE TABLE IF NOT EXISTS `manual_payment_methods` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
