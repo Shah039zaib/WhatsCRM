@@ -45,6 +45,8 @@ app.use("/api/theme", require("./routes/theme"));
 app.use("/api/insta", require("./routes/insta"));
 app.use("/api/kaban", require("./routes/kaban"));
 app.use("/api/waform", require("./routes/waform"));
+app.use("/api/messenger", require("./routes/messenger"));
+app.use("/api/qr_campaign", require("./routes/qrCampaign"));
 
 // ─── Media Streaming Middleware ───────────────────────────────────────────────
 const createMediaMiddleware = (folderPath) => {
@@ -124,6 +126,14 @@ const server = app.listen(process.env.PORT || 3010, () => {
   //   initCampaign();
   //   initTele();
   // }, 1000);
+  // QR campaign background loop (v6.1.0)
+  setTimeout(() => {
+    try {
+      require("./loops/qrCampaignLoop.js").initQrCampaignLoop();
+    } catch (e) {
+      console.error("[QrCampaignLoop] init failed:", e?.message);
+    }
+  }, 5000);
 });
 
 // ─── Socket.IO ────────────────────────────────────────────────────────────────
