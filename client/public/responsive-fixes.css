@@ -1,0 +1,285 @@
+/* ==========================================================================
+   WhatsCRM Responsive Fixes
+   --------------------------------------------------------------------------
+   Mobile/tablet layout corrections for the WhatsCRM React app.
+   Covers: MUI AppBar/Toolbar, Cards, Grid, Tables, Tabs, page headers and
+   the React Flow based Flow Builder (toolbar, node panel, controls).
+   Load AFTER the main bundle CSS so these rules win the cascade.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   TABLET + MOBILE  (max-width: 768px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+
+  /* ---- Top navbar: stop cramping, let items shrink/wrap gracefully ---- */
+  .MuiAppBar-root .MuiToolbar-root {
+    min-height: 56px !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    gap: 4px;
+  }
+  /* Logo text may truncate instead of pushing icons off-screen */
+  .MuiAppBar-root .MuiToolbar-root .MuiTypography-h6,
+  .MuiAppBar-root .MuiToolbar-root h6 {
+    font-size: 1rem !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 38vw;
+    flex-shrink: 1;
+  }
+  /* Icon buttons in the navbar: keep them compact */
+  .MuiAppBar-root .MuiIconButton-root {
+    padding: 6px !important;
+  }
+  /* Language selector: hide the label text, keep the globe icon */
+  .MuiAppBar-root .MuiToolbar-root .MuiSelect-select {
+    padding-right: 18px !important;
+    font-size: 0 !important;
+  }
+  .MuiAppBar-root .MuiToolbar-root .MuiSelect-select > * {
+    font-size: 0.85rem;
+  }
+
+  /* ---- Page headers: title + action buttons stack instead of squeeze ---- */
+  .MuiContainer-root > .MuiBox-root:first-child,
+  .MuiContainer-root > .MuiStack-root:first-child {
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+  }
+  /* Generic flex page-header rows wrap */
+  .MuiBox-root[style*="space-between"],
+  div[class*="pageHeader"] {
+    flex-wrap: wrap !important;
+  }
+
+  /* ---- Dashboard cards: stack vertically, full width ---- */
+  .MuiGrid-container > .MuiGrid-item {
+    max-width: 100% !important;
+    flex-basis: 100% !important;
+  }
+  .MuiCard-root {
+    margin-bottom: 12px;
+  }
+  /* Stat cards content: keep icon + text from overlapping */
+  .MuiCard-root .MuiCardContent-root {
+    padding: 14px !important;
+  }
+
+  /* ---- Tables: horizontal scroll instead of breaking the layout ---- */
+  .MuiTableContainer-root {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .MuiTable-root {
+    min-width: 560px;
+  }
+  .MuiTableCell-root {
+    padding: 8px 10px !important;
+    font-size: 0.8rem !important;
+    white-space: nowrap;
+  }
+  .MuiTableCell-head {
+    font-size: 0.72rem !important;
+  }
+
+  /* ---- Tabs: scrollable, never clipped text ---- */
+  .MuiTabs-root {
+    max-width: 100%;
+  }
+  .MuiTabs-scroller {
+    overflow-x: auto !important;
+  }
+  .MuiTab-root {
+    min-width: 0 !important;
+    padding: 8px 10px !important;
+    font-size: 0.78rem !important;
+  }
+
+  /* ---- Dialogs / drawers: use nearly full width on mobile ---- */
+  .MuiDialog-paper {
+    margin: 12px !important;
+    max-width: calc(100vw - 24px) !important;
+    width: calc(100vw - 24px) !important;
+  }
+  .MuiDrawer-paper {
+    width: min(86vw, 340px) !important;
+  }
+
+  /* ---- Toasts/snackbars: don't cover the navbar ---- */
+  .MuiSnackbar-root {
+    bottom: 16px !important;
+    left: 12px !important;
+    right: 12px !important;
+  }
+  .MuiSnackbar-root .MuiAlert-root {
+    width: 100%;
+  }
+
+  /* ---- Forms: full-width inputs ---- */
+  .MuiTextField-root,
+  .MuiFormControl-root {
+    width: 100%;
+  }
+
+  /* ========================================================================
+     FLOW BUILDER (React Flow)
+     ======================================================================== */
+
+  /* Builder header bar: allow the title field + buttons to wrap to 2 rows */
+  .react-flow__panel.top {
+    left: 0 !important;
+    right: 0 !important;
+    margin: 8px !important;
+    transform: none !important;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    max-width: calc(100vw - 16px);
+  }
+  .react-flow__panel.top.center {
+    left: 0 !important;
+    transform: none !important;
+  }
+  /* The flow-name text field shrinks instead of pushing buttons away */
+  .react-flow__panel.top input,
+  .react-flow__panel.top .MuiTextField-root,
+  .react-flow__panel.top .MuiOutlinedInput-root {
+    min-width: 0 !important;
+    flex: 1 1 140px !important;
+    max-width: 100%;
+  }
+  .react-flow__panel.top input {
+    font-size: 0.85rem !important;
+    padding: 6px 10px !important;
+  }
+  /* Toolbar action buttons: compact, stay on one scrollable row */
+  .react-flow__panel.top .MuiIconButton-root,
+  .react-flow__panel.top button {
+    padding: 6px !important;
+    flex: 0 0 auto;
+  }
+
+  /* Left node panel / sidebar: narrow drawer instead of wide panel */
+  .react-flow__panel.left {
+    margin: 8px !important;
+    max-width: 62vw !important;
+  }
+  /* Node palette cards inside the panel */
+  .react-flow__panel.left .MuiCard-root,
+  .react-flow__panel.left .MuiPaper-root {
+    font-size: 0.78rem !important;
+  }
+
+  /* React Flow zoom controls: smaller, bottom-left, out of the way */
+  .react-flow__controls {
+    transform: scale(0.85);
+    transform-origin: bottom left;
+  }
+  .react-flow__panel.bottom.left {
+    margin: 8px !important;
+  }
+  /* Minimap: smaller on mobile so it doesn't cover the canvas */
+  .react-flow__minimap {
+    width: 110px !important;
+    height: 76px !important;
+  }
+  .react-flow__panel.bottom.right {
+    margin: 8px !important;
+  }
+
+  /* Flow nodes: keep readable but compact */
+  .react-flow__node-default,
+  .react-flow__node-input,
+  .react-flow__node-output {
+    font-size: 11px !important;
+    padding: 8px !important;
+    width: 132px !important;
+  }
+
+  /* Right-side property panel (node settings): overlay sheet on mobile */
+  .react-flow__panel.right {
+    margin: 8px !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: 62vh !important;
+    overflow-y: auto !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   SMALL PHONES  (max-width: 480px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+
+  /* Navbar: hide the language text label entirely, keep icon affordance */
+  .MuiAppBar-root .MuiToolbar-root .MuiTypography-h6,
+  .MuiAppBar-root .MuiToolbar-root h6 {
+    max-width: 30vw;
+    font-size: 0.9rem !important;
+  }
+
+  /* Page titles smaller */
+  .MuiTypography-h4 {
+    font-size: 1.35rem !important;
+  }
+  .MuiTypography-h5 {
+    font-size: 1.15rem !important;
+  }
+  .MuiTypography-h6 {
+    font-size: 1rem !important;
+  }
+
+  /* Buttons: full-width in stacked action areas, smaller text */
+  .MuiButton-root {
+    font-size: 0.78rem !important;
+  }
+  .MuiCardActions-root .MuiButton-root {
+    flex: 1 1 auto;
+  }
+
+  /* Container padding tighter */
+  .MuiContainer-root {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  /* Stat numbers / dashboard headings scale down */
+  .MuiCardContent-root .MuiTypography-h3 {
+    font-size: 1.6rem !important;
+  }
+
+  /* ---- Flow Builder: extra-compact mode ---- */
+  .react-flow__panel.top {
+    margin: 6px !important;
+    gap: 4px;
+    max-width: calc(100vw - 12px);
+  }
+  .react-flow__panel.top input {
+    font-size: 0.8rem !important;
+  }
+  /* Hide minimap on very small screens to free the canvas */
+  .react-flow__minimap {
+    display: none !important;
+  }
+  /* Node panel becomes a bottom sheet trigger width */
+  .react-flow__panel.left {
+    max-width: 70vw !important;
+  }
+  .react-flow__node-default,
+  .react-flow__node-input,
+  .react-flow__node-output {
+    width: 120px !important;
+  }
+
+  /* Pagination / table footers wrap */
+  .MuiTablePagination-root {
+    flex-wrap: wrap;
+  }
+  .MuiTablePagination-toolbar {
+    flex-wrap: wrap;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+  }
+}
