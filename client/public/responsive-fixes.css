@@ -13,11 +13,28 @@
 @media (max-width: 768px) {
 
   /* ---- Top navbar: stop cramping, let items shrink/wrap gracefully ---- */
-  .MuiAppBar-root .MuiToolbar-root {
+  .MuiAppBar-root .MuiToolbar-root,
+  header .MuiToolbar-root,
+  #root > div > header {
     min-height: 56px !important;
     padding-left: 8px !important;
     padding-right: 8px !important;
     gap: 4px;
+    overflow: hidden !important;
+    flex-wrap: nowrap !important;
+  }
+  /* Aggressive: any header toolbar must not overflow viewport */
+  header {
+    max-width: 100vw !important;
+    overflow: hidden !important;
+  }
+  header .MuiToolbar-root > * {
+    flex-shrink: 1 !important;
+    min-width: 0 !important;
+  }
+  /* Keep avatar/user menu visible - don't let it get pushed off */
+  header .MuiAvatar-root {
+    flex-shrink: 0 !important;
   }
   /* Logo text may truncate instead of pushing icons off-screen */
   .MuiAppBar-root .MuiToolbar-root .MuiTypography-h6,
